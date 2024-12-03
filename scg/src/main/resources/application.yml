@@ -3,6 +3,25 @@ spring:
     name: ${APP_NAME:scg}
   cloud:
     gateway:
+      # Timeout
+      httpclient:
+        connect-timeout: 1000
+        response-timeout: 3000
+
+      default-filters:
+        - name: Retry
+          args:
+            retries: 5              # 재시도 횟수
+            statuses: BAD_GATEWAY, INTERNAL_SERVER_ERROR, SERVICE_UNAVAILABLE #재시도 할 응답상태
+            methods: GET, POST  # 재시도 메소드
+            backoff:
+              firstBackoff: 500ms   #첫번째 재시도는 실패 후 0.5초 후 수행
+              maxBackoff: 2000ms    #재시도 간격
+              factor: 10            #firstBackoff * (factor^retries)가 재시도 간격임. maxBackoff보다 클 수는 없음.
+
+        # 중요) 응답에 지정된 헤더가 중복되면 하나만 남김. 다른 필터와의 우선순위로 동작 안할 수 있으므로 가장 마지막에 지정
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+
       routes:
         - id: inquiry-service
           uri: http://${INQUIRY_SERVICE_HOST:localhost}:${INQUIRY_SERVICE_PORT:8081}
@@ -16,6 +35,30 @@ spring:
           uri: http://${BILLING_SERVICE_HOST:localhost}:${BILLING_SERVICE_PORT:8083}
           predicates:
             - Path=/billing/**
+
+        - id: rewrite-billing
+          uri: http://${BILLING_SERVICE_HOST}:${BILLING_SERVICE_PORT}
+          predicates:
+            - Path=/admin/billing/**
+          filters:
+            - RewritePath=/admin/(?<uri>.*), /${uri}
+            - name: Retry
+              args:
+                retries: 5              # 재시도 횟수
+                statuses: BAD_GATEWAY, INTERNAL_SERVER_ERROR, SERVICE_UNAVAILABLE #재시도 할 응답상태
+                methods: POST  # 재시도 메소드
+                backoff:
+                  firstBackoff: 500ms   #첫번째 재시도는 실패 후 0.5초 후 수행
+                  maxBackoff: 2000ms    #재시도 간격
+                  factor: 10            #firstBackoff * (factor^retries)가 재시도 간격임. maxBackoff보다 클 수는 없음.
+                  exceptions:             # Connect가 안되는 경우에만 retry(POST일때는 불필요한 재시도 방지를 위해 설정하는게 좋음)
+                    - java.net.ConnectException
+          metadata: #현재 요청에 대해서만 Timeout 정의 시
+            connect-timeout: 1000
+            response-timeout: 3000
+
+  # 그 외 application.yml에 설정 예제는 아래 페이지 참조
+  # https://happycloud-lee.tistory.com/218
 
 server:
   port: ${SERVER_PORT:8080}
