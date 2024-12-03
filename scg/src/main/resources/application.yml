@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: ${APP_NAME:scg}
+  cloud:
+    gateway:
+      routes:
+        - id: inquiry-service
+          uri: http://${INQUIRY_SERVICE_HOST:localhost}:${INQUIRY_SERVICE_PORT:8081}
+          predicates:
+            - Path=/inquiry/**
+        - id: tech-service
+          uri: http://${TECH_SERVICE_HOST:localhost}:${TECH_SERVICE_PORT:8082}
+          predicates:
+            - Path=/tech/**
+        - id: billing-service
+          uri: http://${BILLING_SERVICE_HOST:localhost}:${BILLING_SERVICE_PORT:8083}
+          predicates:
+            - Path=/billing/**
+
+server:
+  port: ${SERVER_PORT:8080}
+
+logging:
+  level:
+    org.springframework.cloud.gateway: TRACE
+    org.springframework.http.server.reactive: DEBUG
+    org.springframework.web.reactive: DEBUG
+    reactor.netty: DEBUG
+    reactor.netty.http.client: DEBUG

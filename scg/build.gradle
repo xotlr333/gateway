@@ -1,0 +1,24 @@
+dependencies {
+    implementation 'org.springframework.cloud:spring-cloud-starter-gateway'
+
+    // swagger
+    implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.1.0'  // webmvc-ui 대신 webflux-ui 사용
+
+    //-- 기본 L/B인 Ribbon대신 Load Balancer사용
+    implementation 'org.springframework.cloud:spring-cloud-starter-loadbalancer'
+    //-- Load Balancer가 사용할 캐시를 Caffeine으로 변경
+    implementation 'com.github.ben-manes.caffeine:caffeine'
+    implementation 'org.springframework.boot:spring-boot-starter-cache'
+}
+
+//-- Spring Cloud Dependency 관리
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:2023.0.2"
+    }
+}
+
+
+bootJar {
+    archiveFileName = "scg.jar"
+}
