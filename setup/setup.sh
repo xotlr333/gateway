@@ -61,8 +61,8 @@ NAME="${1}-gateway"
 RESOURCE_GROUP="tiu-dgga-rg"
 VNET_NAME="tiu-dgga-vnet"
 LOCATION="koreacentral"
-AKS_NAME="dgga-aks"
-ACR_NAME="dggacr"
+AKS_NAME="${USERID}-aks"
+ACR_NAME="${USERID}cr"
 NAMESPACE="${1}-gateway"
 
 SUBNET_APP="tiu-dgga-pri-snet"
@@ -138,7 +138,7 @@ build_and_push_images() {
 
        # Dockerfile 생성
        cat > $SERVICE/Dockerfile << EOL
-FROM --platform=linux/amd64 eclipse-temurin:17-jdk-alpine
+FROM eclipse-temurin:17-jdk-alpine
 COPY build/libs/${SERVICE}.jar app.jar
 ENTRYPOINT ["java","-jar","/app.jar"]
 EOL
@@ -245,6 +245,7 @@ spec:
       containers:
       - name: $SERVICE
         image: $ACR_NAME.azurecr.io/$NAME-$SERVICE:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: $PORT
         envFrom:
