@@ -39,8 +39,8 @@ fi
 # 환경 변수 설정
 NAME="${1}-gateway"
 RESOURCE_GROUP="tiu-dgga-rg"
-AKS_NAME="dgga-aks"
-ACR_NAME="dggacr"
+AKS_NAME="${1}-aks"
+ACR_NAME="${1}cr"
 NAMESPACE="${1}-gateway"
 
 SERVICES=("scg" "inquiry" "tech" "billing")
