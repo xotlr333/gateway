@@ -89,32 +89,32 @@ setup_namespace() {
 
 # ACR pull 권한 설정
 setup_acr_permission() {
-   log "ACR pull 권한 확인 중..."
+    log "ACR pull 권한 확인 중..."
 
-   # AKS의 service principal 확인
-   SP_ID=$(az aks show \
-       --name $AKS_NAME \
-       --resource-group $RESOURCE_GROUP \
-       --query servicePrincipalProfile.clientId -o tsv)
+    # AKS의 service principal 확인
+    SP_ID=$(az aks show \
+        --name $AKS_NAME \
+        --resource-group $RESOURCE_GROUP \
+        --query servicePrincipalProfile.clientId -o tsv)
+    log "SP_ID-->${SP_ID}"
+    if [ -z "${SP_ID}" ]; then
+        log "AKS가 Managed Identity를 사용하고 있습니다."
+        # ACR 권한이 이미 있다고 가정하고 진행
+        log "ACR pull 권한이 이미 설정되어 있다고 가정합니다."
+    else
+        log "Service Principal을 사용하는 AKS입니다. ACR 권한을 확인합니다..."
+        # ACR ID 가져오기
+        ACR_ID=$(az acr show --name $ACR_NAME --resource-group $RESOURCE_GROUP --query "id" -o tsv)
+        check_error "ACR ID 조회 실패"
 
-   if [ "$SP_ID" = "msi" ] || [ "$SP_ID" = "null" ]; then
-       log "AKS가 Managed Identity를 사용하고 있습니다."
-       # ACR 권한이 이미 있다고 가정하고 진행
-       log "ACR pull 권한이 이미 설정되어 있다고 가정합니다."
-   else
-       log "Service Principal을 사용하는 AKS입니다. ACR 권한을 확인합니다..."
-       # ACR ID 가져오기
-       ACR_ID=$(az acr show --name $ACR_NAME --resource-group $RESOURCE_GROUP --query "id" -o tsv)
-       check_error "ACR ID 조회 실패"
-
-       # AKS에 ACR pull 권한 부여
-       log "ACR pull 권한 설정 중..."
-       az aks update \
-           --name $AKS_NAME \
-           --resource-group $RESOURCE_GROUP \
-           --attach-acr $ACR_ID
-       check_error "ACR pull 권한 부여 실패"
-   fi
+        # AKS에 ACR pull 권한 부여
+        log "ACR pull 권한 설정 중..."
+        az aks update \
+            --name $AKS_NAME \
+            --resource-group $RESOURCE_GROUP \
+            --attach-acr $ACR_ID 2>/dev/null || true
+        check_error "ACR pull 권한 부여 실패"
+    fi
 }
 
 # 애플리케이션 빌드 및 이미지 생성
